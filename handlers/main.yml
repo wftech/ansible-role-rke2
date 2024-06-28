@@ -1,0 +1,15 @@
+- name: Restart RKE2 apiserver
+  systemd:
+        name: rke2-server
+        state: restarted
+        enabled: yes
+        daemon_reload: yes
+  when: rke2_is_master|default(False)
+
+- name: Restart RKE2 agent
+  systemd:
+        name: rke2-agent
+        state: restarted
+        enabled: yes
+        daemon_reload: yes
+  when: rke2_is_worker|default(False)

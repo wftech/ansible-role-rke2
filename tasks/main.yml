@@ -1,0 +1,123 @@
+
+- name: Ensure host is either master or worker
+  assert:
+    that:
+       - rke2_is_master or rke2_is_worker
+
+- name: Ensure host is not master and worker at one time
+  assert:
+    that:
+      -  rke2_is_master != rke2_is_worker
+
+- name: "Ensure iptables-legacy"
+  alternatives:
+    name: "{{ item }}"
+    path: "/usr/sbin/{{ item }}-legacy"
+  loop:
+    - "iptables"
+    - "ip6tables"
+  when: ansible_os_family == 'Debian'
+  ignore_errors: yes
+
+- name: Ensure rancher prerequisites
+  package:
+    name:  ebtables,ethtool,socat,conntrack,ipvsadm,arptables
+    state: present
+
+- name: "Ensure arptables-legacy once more"
+  alternatives:
+    name: "{{ item }}"
+    path: "/usr/sbin/{{ item }}-legacy"
+  loop:
+    - "arptables"
+    - "ebtables"
+  when: ansible_os_family == 'Debian'
+
+- name: Get the RKE2 binary
+  get_url:
+    url: '{{ rke2_distribution_url }}'
+    dest: /usr/bin/rke2
+    checksum: '{{ rke2_checksum }}'
+    mode: 0755
+  notify:
+    - Restart RKE2 apiserver
+    - Restart RKE2 agent
+
+- name: Create kubeconfig dir
+  file:
+    dest: '{{ kubeconfig_location | dirname }}'
+    state: directory
+
+- name: Ensure master token file location
+  file:
+    dest: '{{ rke2_master_token_file | dirname }}'
+    state: directory
+
+- name: Ensure RKE2 config dir
+  file:
+    dest: '{{ rke2_config_file|dirname }}'
+    state: directory
+
+- name: Get RKE2 template_name
+  set_fact:
+    _rke2_template_name: "rke2_master_config.yml"
+  when: rke2_is_master|default(False)
+
+- name: Get RKE2 template_name
+  set_fact:
+    _rke2_template_name: "rke2_worker_config.yml"
+  when: rke2_is_worker|default(False)
+
+
+- name: Ensure RKE2 config
+  template:
+    src: '{{ _rke2_template_name }}'
+    dest: '{{ rke2_config_file }}'
+    backup: yes
+
+- name: Ensure Host is either master or worker
+  assert:
+    that:
+       - rke2_is_master or rke2_is_worker
+
+- name: Setup master
+  include_tasks: setup-master.yml
+  when: rke2_is_master|default(False)
+#
+- name: Setup agent
+  tags: worker
+  include_tasks: setup-agent.yml
+  when: rke2_is_worker|default(False)
+
+
+- name: Create binaries
+  file:
+    src: /var/lib/rancher/rke2/bin/{{ item }}
+    dest: /usr/bin/{{ item }}
+    state: link
+    force: yes
+  loop:
+    - kubectl
+    - crictl
+    - ctr
+
+- name: Ensure crictl socket config
+  copy:
+    content: |
+      # ensure containerd
+      export CONTAINER_RUNTIME_ENDPOINT=unix:///run/k3s/containerd/containerd.sock
+      export CONTAINERD_NAMESPACE=k8s.io
+    dest: /etc/profile.d/crictl.sh
+
+- name: Ensure registry mirror
+  template:
+    src: registries.yml.j2
+    dest: /etc/rancher/rke2/registries.yaml
+    backup: yes
+  when: rke2_containerd_mirror is defined and rke2_containerd_mirror
+  notify: 
+    - Restart RKE2 apiserver
+    - Restart RKE2 agent
+
+  # ensure restart of services when required
+- meta: flush_handlers

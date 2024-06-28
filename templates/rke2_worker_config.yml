@@ -1,0 +1,15 @@
+# {{ ansible_managed }}
+---
+# rke2_is_master: '{{ rke2_is_master }}'
+# rke2_is_worker: '{{ rke2_is_worker }}'
+
+node-name: '{{ rke2_node_name }}'
+node-external-ip: {{ kube_node_advertise_host|to_json }}
+        # used only for connecting other nodes to master one
+node-ip: {{ kube_node_ip|to_json }}
+
+server: "https://{{ rke2_first_master }}:9345/"
+token-file: {{ rke2_worker_token_file }}
+
+node-label:
+  - "worker=true"

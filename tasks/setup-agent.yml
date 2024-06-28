@@ -1,0 +1,36 @@
+
+- name: Check rke2 is up
+  wait_for:
+    host: 127.0.0.1
+    port: 6443
+    state: started
+    timeout: 1
+  ignore_errors: yes
+  register: _rke2_is_up
+
+- name: Get token when required
+  delegate_to: '{{ rke2_master_host }}'
+  become: yes
+  shell: |
+      rke2 token create --ttl 15m --description "Join token: {{ inventory_hostname }}"
+  register: _rke2_token
+  when:  _rke2_is_up is failed
+
+- name: Provide rke2 token file
+  copy:
+      content: '{{ _rke2_token.stdout }}'
+      dest: '{{ rke2_worker_token_file }}'
+      mode: 0600
+  when: _rke2_is_up is failed
+
+- name: Prepare RKE2 worker
+  template:
+    src: rke2-worker.service.j2
+    dest: /etc/systemd/system/rke2-worker.service
+
+- name: Ensure rke agent service
+  service:
+    name: rke2-worker
+    state: started
+    enabled: yes
+

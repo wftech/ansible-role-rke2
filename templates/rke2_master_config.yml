@@ -1,0 +1,70 @@
+# {{ ansible_managed }}
+---
+# rke2_is_master: '{{ rke2_is_master }}'
+# rke2_is_worker: '{{ rke2_is_worker }}'
+
+node-name: '{{ rke2_node_name }}'
+advertise-address: {{ kube_node_advertise_host|to_json }}
+  # used only for connecting other nodes to master one
+
+{% if not rke2_is_first_master %}
+# First master
+server: "https://{{ rke2_first_master }}:9345/"
+{% endif %}
+
+{% if rke2_is_master %}
+{% endif %}
+
+# Provide extra TLS SANs in certificate
+tls-san:
+{% for tls_san in kube_extra_sans %}
+    - {{ tls_san }}
+{% else %}
+    - kubernetes.local
+{% endfor %}
+
+{% if rke2_server_token|default(None) %}
+# Provide cluster token
+token-file: {{ rke2_master_token_file }}
+{% endif %}
+
+
+
+## Networking
+
+node-external-ip: {{ kube_node_advertise_host|to_json }}
+        # used only for connecting other nodes to master one
+node-ip: {{ kube_node_ip|to_json }}
+
+
+## Inter-node networking
+cni: {{ rke2_cni }}
+enable-servicelb: false
+
+
+{% if rke2_disable_nginx_ingress_controller %}
+disable:
+  - rke2-ingress-nginx
+{% endif %}
+
+# Provide Internode config
+# this should be same in all the nodes
+cluster-cidr: {{ kube_cluster_cidr }}
+service-cidr: {{ kube_service_cidr }}
+cluster-dns: {{ kube_cluster_dns }}
+cluster-domain: {{ kube_cluster_domain|to_json }}
+
+node-taint: []
+  #- node-role.kubernetes.io/etcd:NoExecute
+  #- node-role.kubernetes.io/control-plane:NoSchedule
+
+node-label:
+  - "apiserver=true"
+
+write-kubeconfig: {{ kubeconfig_location|to_json }}
+write-kubeconfig-mode: "0600"
+
+
+{% if rke2_extra_config is defined %}
+{{ rke2_extra_config|default({})|to_nice_yaml }}
+{% endif %}

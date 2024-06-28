@@ -1,0 +1,63 @@
+- name: Ensure token file
+  copy:
+    content: '{{ rke2_server_token }}'
+    dest: '{{ rke2_master_token_file }}'
+    mode: 0600
+    backup: yes
+  when: rke2_server_token|default(False)
+
+- name: Prepare RKE server service
+  template:
+    src: rke2-server.service.j2
+    dest: /etc/systemd/system/rke2-server.service
+
+- name: Ensure rke2 manifests
+  file:
+    path: '{{ rke2_manifest_dir }}'
+    state: directory
+    mode: 0755
+
+- name: Add RKE2 cilium config
+  template:
+      src: 'cilium-config.yml'
+      dest: '{{ rke2_manifest_dir }}/rke2-cilium-config.yaml'
+      mode: 0644
+
+- name: Add RKE2 coredns config
+  template:
+      src: 'coredns-config.yml'
+      dest: '{{ rke2_manifest_dir }}/rke2-coredns-config.yaml'
+      mode: 0644
+
+- name: Ensure rke2 server service
+  service:
+    name: rke2-server
+    state: started
+    enabled: yes
+
+- meta: flush_handlers
+
+- name: Wait for kubeapiserver
+  wait_for:
+    port: 6443
+    state: present
+    timeout: 180
+
+- name: Wait for kubeapiserver
+  wait_for:
+    path: '{{ kubeconfig_location }}'
+    state: present
+    timeout: 180
+
+- name: Prepare kubeconfig dir
+  file:
+    path: ~/.kube
+    state: directory
+    mode: 0700
+
+- name: Provide root with kubeconfig
+  copy:
+    remote_src: yes
+    src: '{{ kubeconfig_location }}'
+    dest: ~/.kube/config
+    backup: yes

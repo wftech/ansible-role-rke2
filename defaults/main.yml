@@ -1,0 +1,56 @@
+kubeconfig_location: /etc/kubernetes/kubeconfig
+rke2_data_dir: /var/lib/rancher/rke2
+
+kube_local_storage_dir: /var/local/k8s-data/
+# define this
+
+rke2_arch: amd64
+rke2_distribution_url:
+  https://github.com/rancher/rke2/releases/download/v1.28.3%2Brke2r2/rke2.linux-amd64
+rke2_checksum:
+  sha256:eb15e7d95bf5a240defa13d06e9bc888cd6edb437d8bad1a46c62f8864f2b477
+
+kube_cluster_cidr: 172.19.0.0/16
+kube_service_cidr: 172.22.0.0/16
+kube_cluster_dns: 172.22.53.53
+kube_cluster_domain: cluster.local
+
+rke2_is_master: false
+rke2_is_worker: false
+rke2_is_first_master: false
+rke2_config_file: /etc/rancher/rke2/config.yaml
+
+rke2_master_token_file: /etc/rancher/rke2/master-token.txt
+rke2_worker_token_file: /etc/rancher/rke2/worker-token.txt
+#rke2_master_token: ~
+
+rke2_node_name: '{{ ansible_fqdn }}'
+
+rke2_cni: cilium
+
+rke2_disable: []
+
+
+kube_node_advertise_host: '127.0.0.1'
+kube_node_ip: '127.0.0.1'
+kube_apiserver_port: 6443
+
+# extra names to add to certificate
+kube_extra_sans:
+  - '{{ ansible_fqdn }}'
+  - '{{ ansible_default_ipv4.address }}'
+
+
+rke2_manifest_dir: /var/lib/rancher/rke2/server/manifests
+
+rke2_hubble_enabled: false
+rke2_hubble_hostname: '{{ ansible_fqdn }}'
+rke2_hubble_certificate_secret: hubble-certificate
+
+rke2_disable_nginx_ingress_controller: true
+
+rke2_mirrors: |
+  # add your local registry mirror here
+  #docker.io:
+  #  endpoint:
+  #    - "https://harbor.local.wftech.eu/v2/docker.io/"

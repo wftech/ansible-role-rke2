@@ -1,0 +1,34 @@
+#Ansible managed, do not touch manually
+
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: rke2-cilium
+  namespace: kube-system
+spec:
+  # see: https://github.com/rancher/rke2-charts/tree/main-source/packages/rke2-cilium
+  valuesContent: |-
+    operator:
+      replicas: 1       
+    hubble:
+      enabled: {{ rke2_hubble_enabled|default(false) }}
+      relay:
+        enabled: {{ rke2_hubble_enabled|default(false) }}
+      ui:
+        enabled: {{ rke2_hubble_enabled|default(false) }}
+        ingress:
+           enabled: True
+           hosts: [ {{ rke2_hubble_hostname }} ]
+           tls:
+             - hosts: [ {{ rke2_hubble_hostname }} ]
+               secretName: {{ rke2_hubble_certificate_secret }}
+    #
+    l7Proxy: true
+    # this doesn't work in RKE 1.22 because of old version of helm chart
+    # TODO: try it with newer version of helm chart (sometimes)
+    # apiRateLimit: "endpoint-create=rate-limit:8/s,rate-burst:20"
+    
+    # This workaround doesn't work either because of bug in Cilium :o)
+    # https://github.com/cilium/cilium/issues/22233
+    #extraConfig:
+    #  api-rate-limit: "endpoint-create=rate-limit:8/s,rate-burst:20"
