@@ -1,0 +1,47 @@
+- name: Ensure kubeconfig dir
+  file:
+    path: '~{{ item }}/.kube'
+    state: directory
+    owner: "{{ item }}"
+    group: "{{ item }}"
+    mode: 0700
+  loop: '{{ rke2_kubectl_users }}'
+
+
+- name: Ensure kubeconfig
+  copy:
+    src: /etc/rancher/rke2/rke2.yaml
+    dest: "~{{ item }}/.kube/config"
+    owner: "{{ item }}"
+    group: "{{ item }}"
+    mode: 0600
+    remote_src: yes
+  loop: '{{ rke2_kubectl_users }}'
+
+- name: Ensure bash-completion compat dir
+  file:
+    path: /etc/bash_completion.d
+    state: directory
+
+- name: Ensure kubectl bash_completion
+  shell: kubectl completion bash > /etc/bash_completion.d/kubectl
+  args:
+    creates: /etc/bash_completion.d/kubectl
+
+- name: Ensure kubectl alias
+  copy:
+    dest: /etc/profile.d/kubectl-alias.sh
+    content: |
+      # kubectl alias - ansible managed
+      alias k=kubectl
+      complete -F __start_kubectl k
+  when: rke2_kubectl_create_alias
+
+- name: Ensure kubectl location
+  copy:
+    dest: /etc/profile.d/kubectl-config.sh
+    content: |
+      # kubectl alias
+      mkdir -p ${HOME}/.kube
+      export KUBECONFIG=${HOME}/.kube/config
+

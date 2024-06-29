@@ -54,3 +54,13 @@ rke2_mirrors: |
   #docker.io:
   #  endpoint:
   #    - "https://harbor.local.wftech.eu/v2/docker.io/"
+
+# add kubectl config on master node?
+rke2_kubectl_setup: true
+rke2_kubectl_users:
+  - root
+# add k as kubectl alias
+rke2_kubectl_create_alias: true
+
+# Ensure crictl config
+rke2_ensure_crictl_config: true

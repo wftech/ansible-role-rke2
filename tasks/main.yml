@@ -89,8 +89,7 @@
   include_tasks: setup-agent.yml
   when: rke2_is_worker|default(False)
 
-
-- name: Create binaries
+- name: Create kubectl binaries
   file:
     src: /var/lib/rancher/rke2/bin/{{ item }}
     dest: /usr/bin/{{ item }}
@@ -98,16 +97,31 @@
     force: yes
   loop:
     - kubectl
+  when: rke2_is_master|default(False)
+
+- name: Ensure container CLI binaries
+  file:
+    src: /var/lib/rancher/rke2/bin/{{ item }}
+    dest: /usr/bin/{{ item }}
+    state: link
+    force: yes
+  when: rke2_ensure_crictl_config
+  loop:
     - crictl
     - ctr
 
 - name: Ensure crictl socket config
   copy:
     content: |
-      # ensure containerd
+      # ensure containerd config for crictl
       export CONTAINER_RUNTIME_ENDPOINT=unix:///run/k3s/containerd/containerd.sock
       export CONTAINERD_NAMESPACE=k8s.io
     dest: /etc/profile.d/crictl.sh
+  when: rke2_ensure_crictl_config
+
+- name: Ensure kubectl config
+  include_tasks: ensure-kubectl-config.yml
+  when: rke2_is_master|default(False) and rke2_kubectl_setup
 
 - name: Ensure registry mirror
   template:
@@ -121,3 +135,5 @@
 
   # ensure restart of services when required
 - meta: flush_handlers
+
+
