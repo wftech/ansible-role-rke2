@@ -58,16 +58,15 @@
     dest: '{{ rke2_config_file|dirname }}'
     state: directory
 
-- name: Get RKE2 template_name
+- name: Get RKE2 template_name (master)
   set_fact:
     _rke2_template_name: "rke2_master_config.yml"
   when: rke2_is_master|default(False)
 
-- name: Get RKE2 template_name
+- name: Get RKE2 template_name (worker)
   set_fact:
     _rke2_template_name: "rke2_worker_config.yml"
   when: rke2_is_worker|default(False)
-
 
 - name: Ensure RKE2 config
   template:
