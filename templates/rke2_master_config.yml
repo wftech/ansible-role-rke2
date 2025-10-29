@@ -60,6 +60,9 @@ node-taint: []
 
 node-label:
   - "apiserver=true"
+{% for label_key, label_value in node_labels.items() %}
+  - "{{ label_key }}={{ label_value }}"
+{% endfor %}
 
 write-kubeconfig: {{ kubeconfig_location|to_json }}
 write-kubeconfig-mode: "0600"

@@ -8,7 +8,7 @@
 
 - name: Restart RKE2 agent
   systemd:
-        name: rke2-agent
+        name: rke2-worker
         state: restarted
         enabled: yes
         daemon_reload: yes
