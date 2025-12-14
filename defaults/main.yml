@@ -30,6 +30,7 @@ rke2_cni: cilium
 
 rke2_disable: []
 
+rke2_node_labels: {}
 
 kube_node_advertise_host: '127.0.0.1'
 kube_node_ip: '127.0.0.1'
