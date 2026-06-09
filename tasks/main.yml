@@ -79,9 +79,23 @@
     that:
        - rke2_is_master or rke2_is_worker
 
-- name: Setup master
+- name: Ensure registry mirror
+  template:
+    src: registries.yml.j2
+    dest: /etc/rancher/rke2/registries.yaml
+    backup: yes
+  when: rke2_containerd_mirror is defined and rke2_containerd_mirror
+  notify:
+    - Restart RKE2 apiserver
+    - Restart RKE2 agent
+
+- name: Setup first apiserver
   include_tasks: setup-master.yml
-  when: rke2_is_master|default(False)
+  when: rke2_is_master and rke2_is_first_master
+
+- name: Setup other apiserver
+  include_tasks: setup-master.yml
+  when: rke2_is_master and not rke2_is_first_master
 #
 - name: Setup agent
   tags: worker
@@ -121,16 +135,6 @@
 - name: Ensure kubectl config
   include_tasks: ensure-kubectl-config.yml
   when: rke2_is_master|default(False) and rke2_kubectl_setup
-
-- name: Ensure registry mirror
-  template:
-    src: registries.yml.j2
-    dest: /etc/rancher/rke2/registries.yaml
-    backup: yes
-  when: rke2_containerd_mirror is defined and rke2_containerd_mirror
-  notify: 
-    - Restart RKE2 apiserver
-    - Restart RKE2 agent
 
   # ensure restart of services when required
 - meta: flush_handlers
