@@ -13,6 +13,6 @@ token-file: {{ rke2_worker_token_file }}
 
 node-label:
   - "worker=true"
-{% for label_key, label_value in node_labels.items() %}
+{% for label_key, label_value in rke2_node_labels.items() %}
   - "{{ label_key }}={{ label_value }}"
 {% endfor %}
