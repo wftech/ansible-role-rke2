@@ -4,7 +4,7 @@
     dest: '{{ rke2_master_token_file }}'
     mode: 0600
     backup: yes
-  when: rke2_server_token|default(False)
+  when: rke2_server_token | default('') | length > 0
 
 - name: Prepare RKE server service
   template:
