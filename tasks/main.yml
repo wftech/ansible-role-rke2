@@ -16,7 +16,7 @@
   loop:
     - "iptables"
     - "ip6tables"
-  when: ansible_os_family == 'Debian'
+  when: ansible_os_family == 'Debian' and rke2_iptables_legacy | bool
   ignore_errors: yes
 
 - name: Ensure rancher prerequisites
@@ -31,7 +31,7 @@
   loop:
     - "arptables"
     - "ebtables"
-  when: ansible_os_family == 'Debian'
+  when: ansible_os_family == 'Debian' and rke2_iptables_legacy | bool
 
 - name: Get the RKE2 binary
   get_url:
