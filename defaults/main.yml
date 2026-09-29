@@ -50,6 +50,11 @@ rke2_hubble_certificate_secret: hubble-certificate
 
 rke2_disable_nginx_ingress_controller: true
 
+# Switch iptables/ip6tables/arptables/ebtables alternatives to *-legacy.
+# Off by default: new nodes keep the OS default (nftables). Turning it off
+# does not switch existing nodes back, the alternatives stay as set.
+rke2_iptables_legacy: false
+
 rke2_mirrors: |
   # add your local registry mirror here
   #docker.io:
